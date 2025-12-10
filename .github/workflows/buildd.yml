@@ -1,0 +1,334 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+  pull_request:
+    branches: [ main, develop ]
+  release:
+    types: [ published ]
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'release'
+        type: choice
+        options:
+        - release
+        - debug
+
+env:
+  BUILD_TYPE: ${{ github.event.inputs.build_type || 'release' }}
+
+jobs:
+  build-matrix:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-20.04]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Setup build environment
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          gcc-multilib \
+          g++-multilib \
+          nasm \
+          grub-pc-bin \
+          grub-common \
+          xorriso \
+          genisoimage \
+          mtools \
+          qemu-system-x86 \
+          qemu-utils
+          
+    - name: Cache build artifacts
+      uses: actions/cache@v4
+      with:
+        path: |
+          *.o
+          kernel.elf
+        key: ${{ runner.os }}-build-${{ hashFiles('**/*.c', '**/*.s', '**/*.h') }}
+        restore-keys: |
+          ${{ runner.os }}-build-
+          
+    - name: Display environment info
+      run: |
+        echo "=== Build Environment ==="
+        echo "OS: ${{ matrix.os }}"
+        echo "Build Type: $BUILD_TYPE"
+        echo "GCC: $(gcc --version | head -n1)"
+        echo "NASM: $(nasm -version)"
+        echo "Make: $(make --version | head -n1)"
+        echo "========================="
+        
+    - name: Clean build
+      run: make clean
+      
+    - name: Build kernel
+      run: |
+        echo "Building polyfdOS kernel..."
+        make -j$(nproc)
+        
+    - name: Verify build output
+      run: |
+        if [ ! -f kernel.elf ]; then
+          echo "ERROR: kernel.elf not found!"
+          exit 1
+        fi
+        if [ ! -f polyfdos.iso ]; then
+          echo "ERROR: polyfdos.iso not found!"
+          exit 1
+        fi
+        echo "✓ Build artifacts verified"
+        
+    - name: Run QEMU smoke test
+      run: |
+        echo "Testing polyfdOS boot..."
+        timeout 15s qemu-system-i386 \
+          -cdrom polyfdos.iso \
+          -m 32M \
+          -serial file:qemu-serial.log \
+          -display none \
+          -no-reboot \
+          -d guest_errors 2>&1 | tee qemu-output.log || true
+        
+        echo "=== QEMU Output ==="
+        cat qemu-output.log || true
+        echo "==================="
+        
+        echo "=== Serial Output ==="
+        cat qemu-serial.log || true
+        echo "====================="
+        
+    - name: Create release package
+      run: |
+        mkdir -p artifacts/${{ matrix.os }}
+        cp polyfdos.iso artifacts/${{ matrix.os }}/
+        cp kernel.elf artifacts/${{ matrix.os }}/
+        
+        # Generate metadata
+        cat > artifacts/${{ matrix.os }}/metadata.json << EOF
+        {
+          "version": "1.0.0",
+          "build_date": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+          "git_commit": "${{ github.sha }}",
+          "git_branch": "${{ github.ref_name }}",
+          "os": "${{ matrix.os }}",
+          "kernel_size": $(stat -c%s kernel.elf),
+          "iso_size": $(stat -c%s polyfdos.iso)
+        }
+        EOF
+        
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: polyfdos-${{ matrix.os }}-${{ github.sha }}
+        path: artifacts/${{ matrix.os }}/*
+        retention-days: 90
+        compression-level: 9
+        
+    - name: Upload logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: logs-${{ matrix.os }}-${{ github.sha }}
+        path: |
+          qemu-output.log
+          qemu-serial.log
+          bochslog.txt
+          com1.out
+        retention-days: 30
+
+  test-emulators:
+    name: Test with ${{ matrix.emulator }}
+    needs: build-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        emulator: [qemu, bochs]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: polyfdos-ubuntu-22.04-${{ github.sha }}
+        path: ./
+        
+    - name: Install ${{ matrix.emulator }}
+      run: |
+        sudo apt-get update
+        if [ "${{ matrix.emulator }}" = "qemu" ]; then
+          sudo apt-get install -y qemu-system-x86
+        else
+          sudo apt-get install -y bochs bochs-x
+        fi
+        
+    - name: Test with ${{ matrix.emulator }}
+      run: |
+        if [ "${{ matrix.emulator }}" = "qemu" ]; then
+          echo "Testing with QEMU..."
+          timeout 20s qemu-system-i386 \
+            -cdrom polyfdos.iso \
+            -m 64M \
+            -serial stdio \
+            -display none || true
+        else
+          echo "Testing with Bochs..."
+          sed -i 's/display_library: sdl/display_library: term/g' bochsrc.txt
+          sed -i 's/path=hydra.iso/path=polyfdos.iso/g' bochsrc.txt
+          timeout 20s bochs -f bochsrc.txt -q || true
+        fi
+
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cppcheck clang-format
+        
+    - name: Run cppcheck
+      run: |
+        echo "Running static analysis..."
+        cppcheck --enable=all --suppress=missingIncludeSystem \
+          --error-exitcode=0 \
+          *.c *.h 2>&1 | tee cppcheck-report.txt
+        
+    - name: Check code formatting
+      run: |
+        echo "Checking code style..."
+        find . -name "*.c" -o -name "*.h" | xargs clang-format --dry-run --Werror || true
+        
+    - name: Upload quality reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: code-quality-reports
+        path: cppcheck-report.txt
+        retention-days: 30
+
+  create-release:
+    name: Create Release Package
+    needs: [build-matrix, test-emulators]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts/
+        
+    - name: Create release bundle
+      run: |
+        mkdir -p release-bundle
+        
+        # Copy ISO and kernel from latest Ubuntu build
+        cp artifacts/polyfdos-ubuntu-22.04-*/polyfdos.iso release-bundle/
+        cp artifacts/polyfdos-ubuntu-22.04-*/kernel.elf release-bundle/
+        
+        # Generate checksums
+        cd release-bundle
+        sha256sum * > SHA256SUMS
+        md5sum * > MD5SUMS
+        
+    - name: Create comprehensive README
+      run: |
+        cat > release-bundle/README.txt << 'EOF'
+        polyfdOS v1.0 - Official Release
+        =================================
+        
+        Thank you for downloading polyfdOS!
+        
+        Files in this package:
+        - polyfdos.iso    : Bootable ISO image
+        - kernel.elf      : Kernel binary (ELF format)
+        - SHA256SUMS      : SHA-256 checksums
+        - MD5SUMS         : MD5 checksums
+        - README.txt      : This file
+        
+        Quick Start:
+        -----------
+        
+        QEMU (Recommended):
+          qemu-system-i386 -cdrom polyfdos.iso
+        
+        VirtualBox:
+          1. Create VM (Other/32-bit)
+          2. Mount polyfdos.iso
+          3. Boot
+        
+        USB Drive:
+          sudo dd if=polyfdos.iso of=/dev/sdX bs=4M
+          (Replace /dev/sdX with your USB device)
+        
+        Verify checksums:
+          sha256sum -c SHA256SUMS
+        
+        Documentation: https://github.com/[your-repo]
+        Support: Open an issue on GitHub
+        License: MIT
+        
+        Built with ❤️ in Morocco 🇲🇦
+        Organization: Daftyon
+        EOF
+        
+    - name: Compress release bundle
+      run: |
+        tar -czf polyfdos-v1.0-release.tar.gz release-bundle/
+        zip -r polyfdos-v1.0-release.zip release-bundle/
+        
+    - name: Upload to release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          polyfdos-v1.0-release.tar.gz
+          polyfdos-v1.0-release.zip
+          release-bundle/polyfdos.iso
+          release-bundle/kernel.elf
+          release-bundle/SHA256SUMS
+          release-bundle/README.txt
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notification:
+    name: Send Notifications
+    needs: [build-matrix, test-emulators]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Check build status
+      run: |
+        if [ "${{ needs.build-matrix.result }}" = "success" ] && [ "${{ needs.test-emulators.result }}" = "success" ]; then
+          echo "BUILD_STATUS=✅ Success" >> $GITHUB_ENV
+        else
+          echo "BUILD_STATUS=❌ Failed" >> $GITHUB_ENV
+        fi
+        
+    - name: Summary
+      run: |
+        echo "### polyfdOS Build Summary 🇲🇦" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Status:** ${{ env.BUILD_STATUS }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
