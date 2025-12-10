@@ -3,6 +3,7 @@
 #include "keyboard.h"
 #include "serial.h"
 #include "snake.h"
+#include "io.h"
 
 #define COMMAND_BUFFER_SIZE 256
 
@@ -39,11 +40,14 @@ void shell_clear_command(void)
 void shell_help_command(void)
 {
     fb_puts("Available commands:\n");
-    fb_puts("  help  - Display this help message\n");
-    fb_puts("  clear - Clear the screen\n");
-    fb_puts("  echo  - Echo back your text\n");
-    fb_puts("  about - Display OS information\n");
-    fb_puts("  play  - Play Snake game!\n");
+    fb_puts("  help   - Display this help message\n");
+    fb_puts("  clear  - Clear the screen\n");
+    fb_puts("  echo   - Echo back your text\n");
+    fb_puts("  about  - Display OS information\n");
+    fb_puts("  play   - Play Snake game!\n");
+    fb_puts("  sudo   - Execute command with root privileges\n");
+    fb_puts("  reboot - Reboot the system\n");
+    fb_puts("  halt   - Shutdown the system\n");
 }
 
 /** shell_echo_command:
@@ -65,15 +69,58 @@ void shell_about_command(void)
     fb_puts("polyfdOS v1.0 - Moroccan x86 Operating System\n");
     fb_puts("A minimal OS kernel built from scratch\n");
     fb_puts("Built following 'The little book about OS development'\n");
-    fb_puts("Developer - Synthos (polyfdos)\n");
+    fb_puts("Developer - PolyfdoR (polyfdos)\n");
     fb_puts("Organization - Daftyon\n");
-    fb_puts("Location - Morocco\n");
+
+}
+
+/** shell_sudo_command:
+ *  Executes a command with root privileges (fun easter egg)
+ *
+ *  @param args  The command to execute
+ */
+void shell_sudo_command(char *args)
+{
+    fb_puts("[sudo] password for PolyfdoR: ");
     fb_puts("\n");
-    fb_puts("Developer Message -\n");
-    fb_puts("As a full-stack developer, I work with high-level languages\n");
-    fb_puts("like JavaScript, Dart, and Go. This project is my journey\n");
-    fb_puts("into low-level systems programming. It's challenging and\n");
-    fb_puts("rewarding - a true learning experience from Morocco!\n");
+    fb_puts("Authenticating...\n");
+    fb_puts("Access granted! You are now root.\n");
+    fb_puts("Running: ");
+    fb_puts(args);
+    fb_puts("\n");
+    fb_puts("Command executed successfully.\n");
+}
+
+/** shell_reboot_command:
+ *  Reboots the system
+ */
+void shell_reboot_command(void)
+{
+    fb_puts("Rebooting polyfdOS...\n");
+    fb_puts("Goodbye!\n");
+    /* Triple fault to reboot - write to port 0x64 */
+    __asm__ volatile("cli");
+    unsigned char temp;
+    do {
+        temp = inb(0x64);
+        if (temp & 1) {
+            inb(0x60);
+        }
+    } while (temp & 2);
+    outb(0x64, 0xFE);
+    /* Hang if reboot fails */
+    while(1);
+}
+
+/** shell_halt_command:
+ *  Halts the system
+ */
+void shell_halt_command(void)
+{
+    fb_puts("Halting polyfdOS...\n");
+    fb_puts("System halted. It is now safe to close the window.\n");
+    __asm__ volatile("cli; hlt");
+    while(1);
 }
 
 /** shell_play_command:
@@ -127,6 +174,12 @@ void shell_execute_command(void)
         shell_about_command();
     } else if (strcmp(cmd, "play") == 0) {
         shell_play_command();
+    } else if (strcmp(cmd, "sudo") == 0) {
+        shell_sudo_command(args);
+    } else if (strcmp(cmd, "reboot") == 0) {
+        shell_reboot_command();
+    } else if (strcmp(cmd, "halt") == 0) {
+        shell_halt_command();
     } else {
         fb_puts("Unknown command: ");
         fb_puts(cmd);
@@ -156,7 +209,7 @@ void shell_init(void)
     fb_puts("\n");
     fb_puts("===============================================\n");
     fb_puts("   Moroccan x86 Operating System v1.0\n");
-    fb_puts("   Developer: Synthos | Organization: Daftyon\n");
+    fb_puts("   Developer: PolyfdoR | Organization: Daftyon\n");
     fb_puts("===============================================\n\n");
     fb_puts("Type 'help' for available commands.\n\n");
     fb_puts("> ");
