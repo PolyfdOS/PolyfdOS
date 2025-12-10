@@ -40,21 +40,29 @@ jobs:
     - name: Clean previous builds
       run: make clean || true
         
-    - name: Build polyfdOS kernel and ISO
+    - name: Build polyfdOS kernel
       run: |
-        echo "Building polyfdOS..."
-        make
-        echo "Build completed!"
+        echo "Building polyfdOS kernel..."
+        make kernel.elf
+        echo "Kernel build completed!"
+        
+    - name: Build polyfdOS ISO
+      run: |
+        echo "Building polyfdOS ISO..."
+        make polyfdos.iso
+        echo "ISO build completed!"
         
     - name: Verify build artifacts exist
       run: |
         echo "=== Checking Build Artifacts ==="
         if [ ! -f kernel.elf ]; then
           echo "ERROR: kernel.elf not found!"
+          ls -la
           exit 1
         fi
         if [ ! -f polyfdos.iso ]; then
           echo "ERROR: polyfdos.iso not found!"
+          ls -la
           exit 1
         fi
         echo "✓ All artifacts found"
@@ -103,35 +111,56 @@ jobs:
         
         Kernel Binary:
         - File: kernel.elf
-        - Size: $(stat -c%s kernel.elf) bytes
+        - Size: $(stat -c%s kernel.elf) bytes ($(numfmt --to=iec-i --suffix=B $(stat -c%s kernel.elf)))
         - Type: $(file -b kernel.elf)
         
         Bootable ISO:
         - File: polyfdos.iso
-        - Size: $(stat -c%s polyfdos.iso) bytes
+        - Size: $(stat -c%s polyfdos.iso) bytes ($(numfmt --to=iec-i --suffix=B $(stat -c%s polyfdos.iso)))
         - Type: $(file -b polyfdos.iso)
         
         Build Environment:
-        - OS: Ubuntu (GitHub Actions Runner)
+        - OS: Ubuntu $(lsb_release -rs) (GitHub Actions Runner)
         - GCC: $(gcc --version | head -n1)
         - NASM: $(nasm -version)
+        - Kernel: $(uname -r)
         
         Running Instructions:
         ---------------------
-        QEMU:
+        QEMU (Recommended):
           qemu-system-i386 -cdrom polyfdos.iso
+        
+        QEMU with more memory:
+          qemu-system-i386 -cdrom polyfdos.iso -m 64M
         
         VirtualBox:
           1. Create new VM (Type: Other, Version: Other/32-bit)
           2. Attach polyfdos.iso as CD-ROM
           3. Boot from CD-ROM
         
-        Real Hardware:
+        VMware:
+          1. Create new VM (Other 32-bit)
+          2. Mount polyfdos.iso
+          3. Boot
+        
+        Real Hardware (USB):
           sudo dd if=polyfdos.iso of=/dev/sdX bs=4M status=progress
-          (WARNING: Replace /dev/sdX with your USB drive)
+          (WARNING: Replace /dev/sdX with your USB drive - this will erase all data!)
+        
+        Available Commands in polyfdOS:
+        -------------------------------
+        help   - Display available commands
+        clear  - Clear the screen
+        echo   - Echo text back
+        about  - Display OS information
+        play   - Play Snake game
+        sudo   - Execute with elevated privileges
+        reboot - Restart the system
+        halt   - Shutdown the system
         
         Repository: ${{ github.server_url }}/${{ github.repository }}
         Organization: Daftyon
+        Location: Morocco 🇲🇦
         License: MIT
         EOF
         
@@ -140,7 +169,9 @@ jobs:
         cd release
         sha256sum polyfdos.iso kernel.elf > SHA256SUMS.txt
         md5sum polyfdos.iso kernel.elf > MD5SUMS.txt
+        echo "=== SHA256 Checksums ==="
         cat SHA256SUMS.txt
+        echo "========================"
         
     - name: Upload ISO as artifact
       uses: actions/upload-artifact@v4
@@ -165,17 +196,25 @@ jobs:
         
     - name: Create release summary
       run: |
-        echo "### polyfdOS Build Summary 🇲🇦" >> $GITHUB_STEP_SUMMARY
+        echo "### 🇲🇦 polyfdOS Build Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "**Status:** ✅ Build Successful" >> $GITHUB_STEP_SUMMARY
         echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "**Triggered by:** @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Artifacts:**" >> $GITHUB_STEP_SUMMARY
-        echo "- 📀 polyfdos.iso ($(stat -c%s release/polyfdos.iso | numfmt --to=iec-i --suffix=B))" >> $GITHUB_STEP_SUMMARY
-        echo "- 🔧 kernel.elf ($(stat -c%s release/kernel.elf | numfmt --to=iec-i --suffix=B))" >> $GITHUB_STEP_SUMMARY
+        echo "### 📦 Artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "| File | Size |" >> $GITHUB_STEP_SUMMARY
+        echo "|------|------|" >> $GITHUB_STEP_SUMMARY
+        echo "| 📀 polyfdos.iso | $(stat -c%s release/polyfdos.iso | numfmt --to=iec-i --suffix=B) |" >> $GITHUB_STEP_SUMMARY
+        echo "| 🔧 kernel.elf | $(stat -c%s release/kernel.elf | numfmt --to=iec-i --suffix=B) |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Download:** Check the Artifacts section below" >> $GITHUB_STEP_SUMMARY
+        echo "### 🚀 Quick Start" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+        echo "qemu-system-i386 -cdrom polyfdos.iso" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Download artifacts below** ⬇️" >> $GITHUB_STEP_SUMMARY
         
     - name: Upload to Release (on tag)
       if: startsWith(github.ref, 'refs/tags/')
@@ -188,26 +227,42 @@ jobs:
           release/SHA256SUMS.txt
           release/MD5SUMS.txt
         body: |
-          ## polyfdOS ${{ github.ref_name }} 🇲🇦
+          ## 🇲🇦 polyfdOS ${{ github.ref_name }}
           
           **Moroccan x86 Operating System - Official Release**
           
-          ### Download
-          - `polyfdos.iso` - Bootable ISO image
-          - `kernel.elf` - Kernel binary (ELF format)
+          ### 📥 Download
+          - `polyfdos.iso` - Bootable ISO image (boot with QEMU, VirtualBox, or burn to USB)
+          - `kernel.elf` - Kernel binary in ELF format
+          - `BUILD_INFO.txt` - Complete build information
+          - `SHA256SUMS.txt` - SHA-256 checksums for verification
+          - `MD5SUMS.txt` - MD5 checksums for verification
           
-          ### Quick Start
+          ### 🚀 Quick Start
           ```bash
-          # Run with QEMU
+          # Run with QEMU (recommended)
           qemu-system-i386 -cdrom polyfdos.iso
+          
+          # Or with more memory
+          qemu-system-i386 -cdrom polyfdos.iso -m 64M
           ```
           
-          ### Verify Download
+          ### ✅ Verify Download
           ```bash
           sha256sum -c SHA256SUMS.txt
           ```
           
-          Built with ❤️ in Morocco by Daftyon
+          ### ⌨️ Available Commands
+          - `help` - Show all commands
+          - `about` - OS information
+          - `play` - Play Snake game! 🐍
+          - `clear` - Clear screen
+          - `sudo` - Elevated privileges
+          - `reboot` / `halt` - System control
+          
+          ---
+          
+          Built with ❤️ in Morocco by **Daftyon**
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -230,14 +285,19 @@ jobs:
           bochs \
           bochs-x
           
-    - name: Build polyfdOS
-      run: make
+    - name: Build polyfdOS kernel
+      run: make kernel.elf
+      
+    - name: Build polyfdOS ISO
+      run: make polyfdos.iso
       
     - name: Update bochsrc for headless mode
       run: |
         sed -i 's/display_library: sdl/display_library: term/g' bochsrc.txt
-        sed -i 's/path=hydra.iso/path=polyfdos.iso/g' bochsrc.txt
+        sed -i 's/path=hydra.iso/path=polyfdos.iso/g' bochsrc.txt || true
+        echo "=== Bochs Configuration ==="
         cat bochsrc.txt
+        echo "==========================="
         
     - name: Test with Bochs (headless)
       run: |
@@ -249,7 +309,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: bochs-logs
+        name: bochs-logs-${{ github.sha }}
         path: |
           bochslog.txt
           com1.out
