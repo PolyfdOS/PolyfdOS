@@ -26,6 +26,32 @@ int strcmp(const char *s1, const char *s2)
     return *(unsigned char *)s1 - *(unsigned char *)s2;
 }
 
+/** strstr:
+ *  Simple string search function
+ *
+ *  @param haystack  String to search in
+ *  @param needle    String to search for
+ *  @return          Pointer to first occurrence or 0
+ */
+char* strstr(const char *haystack, const char *needle)
+{
+    if (!*needle) return (char*)haystack;
+    
+    for (; *haystack; haystack++) {
+        const char *h = haystack;
+        const char *n = needle;
+        
+        while (*h && *n && (*h == *n)) {
+            h++;
+            n++;
+        }
+        
+        if (!*n) return (char*)haystack;
+    }
+    
+    return 0;
+}
+
 /** shell_clear_command:
  *  Clears the screen
  */
@@ -40,14 +66,16 @@ void shell_clear_command(void)
 void shell_help_command(void)
 {
     fb_puts("Available commands:\n");
-    fb_puts("  help   - Display this help message\n");
-    fb_puts("  clear  - Clear the screen\n");
-    fb_puts("  echo   - Echo back your text\n");
-    fb_puts("  about  - Display OS information\n");
-    fb_puts("  play   - Play Snake game!\n");
-    fb_puts("  sudo   - Execute command with root privileges\n");
-    fb_puts("  reboot - Reboot the system\n");
-    fb_puts("  halt   - Shutdown the system\n");
+    fb_puts("  help     - Display this help message\n");
+    fb_puts("  clear    - Clear the screen\n");
+    fb_puts("  echo     - Echo back your text\n");
+    fb_puts("  about    - Display OS information\n");
+    fb_puts("  play     - Play Snake game!\n");
+    fb_puts("  download - Download file from internet\n");
+    fb_puts("  ls       - List downloaded files\n");
+    fb_puts("  sudo     - Execute command with root privileges\n");
+    fb_puts("  reboot   - Reboot the system\n");
+    fb_puts("  halt     - Shutdown the system\n");
 }
 
 /** shell_echo_command:
@@ -66,12 +94,176 @@ void shell_echo_command(char *args)
  */
 void shell_about_command(void)
 {
-    fb_puts("polyfdOS v1.0 - Moroccan x86 Operating System\n");
+    fb_puts("polyfdOS v1.2 - Moroccan x86 Operating System\n");
     fb_puts("A minimal OS kernel built from scratch\n");
     fb_puts("Built following 'The little book about OS development'\n");
     fb_puts("Developer - PolyfdoR (polyfdos)\n");
     fb_puts("Organization - Daftyon\n");
+    fb_puts("Location - Morocco\n");
+    fb_puts("\n");
+    fb_puts("Features:\n");
+    fb_puts("  - Protected mode (32-bit)\n");
+    fb_puts("  - Interrupt handling (GDT/IDT/PIC)\n");
+    fb_puts("  - Keyboard driver (PS/2)\n");
+    fb_puts("  - Framebuffer VGA text mode\n");
+    fb_puts("  - Serial port debugging\n");
+    fb_puts("  - Interactive shell\n");
+    fb_puts("  - Network simulation\n");
+}
 
+/** shell_download_command:
+ *  Simulates downloading a file from the internet
+ *  In a real implementation, this would use a network stack
+ *
+ *  @param args  The URL or package name to download
+ */
+void shell_download_command(char *args)
+{
+    // Simple download simulation
+    if (args[0] == '\0') {
+        fb_puts("Usage: download <package-name>\n");
+        fb_puts("Example: download python\n");
+        fb_puts("         download nodejs\n");
+        fb_puts("         download gcc\n");
+        return;
+    }
+    
+    fb_puts("Initializing network interface...\n");
+    fb_puts("[OK] Network interface eth0 up\n");
+    fb_puts("\n");
+    
+    fb_puts("Resolving package repository...\n");
+    fb_puts("[OK] Connected to packages.polyfdos.ma\n");
+    fb_puts("\n");
+    
+    fb_puts("Searching for package: ");
+    fb_puts(args);
+    fb_puts("\n");
+    
+    // Simulate different packages
+    if (strstr(args, "python")) {
+        fb_puts("[FOUND] python-3.12.0-polyfdos-x86.tar.gz\n");
+        fb_puts("Size: 45.2 MB\n");
+        fb_puts("\n");
+        fb_puts("Downloading");
+        
+        // Simulate download progress
+        int i;
+        for (i = 0; i < 5; i++) {
+            fb_puts(".");
+            // Simple delay
+            volatile int j, k;
+            for (j = 0; j < 1000; j++) {
+                for (k = 0; k < 10000; k++) { }
+            }
+        }
+        
+        fb_puts(" [100%]\n");
+        fb_puts("\n");
+        fb_puts("[OK] Downloaded python-3.12.0\n");
+        fb_puts("[OK] Verifying checksum...\n");
+        fb_puts("[OK] Installing to /usr/local/python3\n");
+        fb_puts("\n");
+        fb_puts("Installation complete!\n");
+        fb_puts("Run 'python3 --version' to verify installation.\n");
+        
+    } else if (strstr(args, "nodejs") || strstr(args, "node")) {
+        fb_puts("[FOUND] nodejs-20.10.0-polyfdos-x86.tar.gz\n");
+        fb_puts("Size: 38.7 MB\n");
+        fb_puts("\n");
+        fb_puts("Downloading");
+        
+        int i;
+        for (i = 0; i < 5; i++) {
+            fb_puts(".");
+            volatile int j, k;
+            for (j = 0; j < 1000; j++) {
+                for (k = 0; k < 10000; k++) { }
+            }
+        }
+        
+        fb_puts(" [100%]\n");
+        fb_puts("\n");
+        fb_puts("[OK] Downloaded nodejs-20.10.0\n");
+        fb_puts("[OK] Installing to /usr/local/nodejs\n");
+        fb_puts("\n");
+        fb_puts("Installation complete!\n");
+        fb_puts("Run 'node --version' to verify installation.\n");
+        
+    } else if (strstr(args, "gcc")) {
+        fb_puts("[FOUND] gcc-13.2.0-polyfdos-x86.tar.gz\n");
+        fb_puts("Size: 102.5 MB\n");
+        fb_puts("\n");
+        fb_puts("Downloading");
+        
+        int i;
+        for (i = 0; i < 5; i++) {
+            fb_puts(".");
+            volatile int j, k;
+            for (j = 0; j < 1000; j++) {
+                for (k = 0; k < 10000; k++) { }
+            }
+        }
+        
+        fb_puts(" [100%]\n");
+        fb_puts("\n");
+        fb_puts("[OK] Downloaded gcc-13.2.0\n");
+        fb_puts("[OK] Installing to /usr/local/gcc\n");
+        fb_puts("\n");
+        fb_puts("Installation complete!\n");
+        fb_puts("Run 'gcc --version' to verify installation.\n");
+        
+    } else if (strstr(args, "rust")) {
+        fb_puts("[FOUND] rust-1.75.0-polyfdos-x86.tar.gz\n");
+        fb_puts("Size: 156.8 MB\n");
+        fb_puts("\n");
+        fb_puts("Downloading");
+        
+        int i;
+        for (i = 0; i < 5; i++) {
+            fb_puts(".");
+            volatile int j, k;
+            for (j = 0; j < 1000; j++) {
+                for (k = 0; k < 10000; k++) { }
+            }
+        }
+        
+        fb_puts(" [100%]\n");
+        fb_puts("\n");
+        fb_puts("[OK] Downloaded rust-1.75.0\n");
+        fb_puts("[OK] Installing to /usr/local/rust\n");
+        fb_puts("\n");
+        fb_puts("Installation complete!\n");
+        fb_puts("Run 'rustc --version' to verify installation.\n");
+        
+    } else {
+        fb_puts("[ERROR] Package not found in repository\n");
+        fb_puts("\n");
+        fb_puts("Available packages:\n");
+        fb_puts("  - python (Python 3.12.0)\n");
+        fb_puts("  - nodejs (Node.js 20.10.0)\n");
+        fb_puts("  - gcc (GCC 13.2.0)\n");
+        fb_puts("  - rust (Rust 1.75.0)\n");
+        fb_puts("\n");
+        fb_puts("Note: Full network stack coming in v2.0!\n");
+    }
+}
+
+/** shell_ls_command:
+ *  Lists downloaded/installed packages
+ */
+void shell_ls_command(void)
+{
+    fb_puts("Installed packages:\n");
+    fb_puts("\n");
+    fb_puts("System packages:\n");
+    fb_puts("  /bin/shell        - polyfdOS Shell v1.2\n");
+    fb_puts("  /bin/snake        - Snake Game\n");
+    fb_puts("\n");
+    fb_puts("User packages:\n");
+    fb_puts("  (use 'download' to install packages)\n");
+    fb_puts("\n");
+    fb_puts("Disk usage: 26 KB / 512 MB\n");
 }
 
 /** shell_sudo_command:
@@ -174,6 +366,10 @@ void shell_execute_command(void)
         shell_about_command();
     } else if (strcmp(cmd, "play") == 0) {
         shell_play_command();
+    } else if (strcmp(cmd, "download") == 0) {
+        shell_download_command(args);
+    } else if (strcmp(cmd, "ls") == 0) {
+        shell_ls_command();
     } else if (strcmp(cmd, "sudo") == 0) {
         shell_sudo_command(args);
     } else if (strcmp(cmd, "reboot") == 0) {
@@ -208,10 +404,11 @@ void shell_init(void)
     fb_puts("              |___/                       \n");
     fb_puts("\n");
     fb_puts("===============================================\n");
-    fb_puts("   Moroccan x86 Operating System v1.0\n");
+    fb_puts("   Moroccan x86 Operating System v1.2\n");
     fb_puts("   Developer: PolyfdoR | Organization: Daftyon\n");
     fb_puts("===============================================\n\n");
-    fb_puts("Type 'help' for available commands.\n\n");
+    fb_puts("Type 'help' for available commands.\n");
+    fb_puts("Try 'download python' to install packages!\n\n");
     fb_puts("> ");
 }
 
