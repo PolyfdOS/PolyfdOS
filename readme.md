@@ -218,7 +218,7 @@ Available commands:
 Hello from Morocco!
 
 > about
-polyfdOS v1.3 - Moroccan x86 Operating System
+polyfdOS V1.4 - Moroccan x86 Operating System
 ...
 ```
 

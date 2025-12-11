@@ -4,6 +4,7 @@
 #include "idt.h"
 #include "keyboard.h"
 #include "shell.h"
+#include "filesystem.h"
 
 int kmain(void)
 {
@@ -27,6 +28,20 @@ int kmain(void)
     /* Initialize keyboard */
     keyboard_init();
     serial_write("Keyboard initialized\n", 21);
+    
+    /* Initialize filesystem */
+    fs_init();
+    serial_write("Filesystem initialized\n", 23);
+    
+    /* Create standard directories */
+    fs_mkdir("/bin");
+    fs_mkdir("/home");
+    fs_mkdir("/usr");
+    fs_mkdir("/etc");
+    fs_mkdir("/dev");
+    fs_mkdir("/tmp");
+    fs_mkdir("/var");
+    serial_write("Standard directories created\n", 29);
     
     /* Enable interrupts */
     __asm__ ("sti");
