@@ -365,7 +365,7 @@ void shell_sysinfo_command(void)
     fb_puts("  Kernel Size: 26 KB\n\n");
     
     fb_puts("System:\n");
-    fb_puts("  OS: polyfdOS v1.3\n");
+    fb_puts("  OS: polyfdOS v1.0\n");
     fb_puts("  Kernel: Monolithic\n");
     fb_puts("  Architecture: x86\n");
     fb_puts("  Boot Protocol: Multiboot\n");
@@ -471,7 +471,7 @@ void shell_help_command(void)
     fb_puts("  sysinfo  - Show system hardware info\n");
     fb_puts("  cpu      - Show detailed CPU info\n");
     fb_puts("  mem      - Show memory info\n");
-    fb_puts("  visit    - Navigate directories (alias: vst)\n");
+    fb_puts("  cd       - Change directory (alias: visit, vst)\n");
     fb_puts("  pwd      - Print working directory\n");
     fb_puts("  ls       - List directory contents\n");
     fb_puts("  play     - Play Snake game!\n");
@@ -495,7 +495,7 @@ void shell_echo_command(char *args)
  */
 void shell_about_command(void)
 {
-    fb_puts("polyfdOS v1.3 - Moroccan x86 Operating System\n");
+    fb_puts("polyfdOS v1.0 - Moroccan x86 Operating System\n");
     fb_puts("A minimal OS kernel built from scratch\n");
     fb_puts("Organization - Daftyon\n");
     fb_puts("Location - Morocco\n\n");
@@ -626,7 +626,7 @@ void shell_execute_command(void)
         shell_cpu_command();
     } else if (strcmp(cmd, "mem") == 0) {
         shell_mem_command();
-    } else if (strcmp(cmd, "visit") == 0 || strcmp(cmd, "vst") == 0) {
+    } else if (strcmp(cmd, "visit") == 0 || strcmp(cmd, "vst") == 0 || strcmp(cmd, "cd") == 0) {
         shell_visit_command(args);
     } else if (strcmp(cmd, "pwd") == 0) {
         shell_pwd_command();
@@ -669,11 +669,11 @@ void shell_init(void)
     fb_puts("              |___/                       \n");
     fb_puts("\n");
     fb_puts("===============================================\n");
-    fb_puts("   Moroccan x86 Operating System v1.3\n");
+    fb_puts("   Moroccan x86 Operating System v1.0\n");
     fb_puts("   Developer: Synthos | Organization: Daftyon\n");
     fb_puts("===============================================\n\n");
     fb_puts("Type 'help' for available commands.\n");
-    fb_puts("Try 'vst /home' to navigate directories!\n\n");
+    fb_puts("Try 'cd /home' to navigate directories!\n\n");
     fb_puts(current_directory);
     fb_puts(" > ");
 }
