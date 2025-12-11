@@ -294,7 +294,7 @@ jobs:
     - name: Update bochsrc for headless mode
       run: |
         sed -i 's/display_library: sdl/display_library: term/g' bochsrc.txt
-        sed -i 's/path=hydra.iso/path=polyfdos.iso/g' bochsrc.txt || true
+        sed -i 's/path=polyfdos.iso/path=polyfdos.iso/g' bochsrc.txt || true
         echo "=== Bochs Configuration ==="
         cat bochsrc.txt
         echo "==========================="

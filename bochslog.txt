@@ -78,8 +78,8 @@
 00000000000i[IOAPIC] IOAPIC enabled (base address = 0xfec00000)
 00000000000i[PLUGIN] init_dev of 'keyboard' plugin device by virtual method
 00000000000i[PLUGIN] init_dev of 'harddrv' plugin device by virtual method
-00000000000i[HD    ] CD on ata0-0: 'hydra.iso'
-00000000000i[CD1   ] load cdrom with path='hydra.iso'
+00000000000i[HD    ] CD on ata0-0: 'polyfdos.iso'
+00000000000i[CD1   ] load cdrom with path='polyfdos.iso'
 00000000000i[CD1   ] Opening image file as a cd.
 00000000000i[HD    ] Media present in CD-ROM drive
 00000000000i[HD    ] Capacity is 245 sectors (0.48 MB)

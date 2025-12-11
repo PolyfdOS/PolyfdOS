@@ -218,7 +218,7 @@ Available commands:
 Hello from Morocco!
 
 > about
-polyfdOS v1.2 - Moroccan x86 Operating System
+polyfdOS v1.3 - Moroccan x86 Operating System
 ...
 ```
 
@@ -344,7 +344,7 @@ Contributions are welcome! This is an educational project designed to help devel
 
 polyfdOS was built using knowledge from:
 
-- **[The Little Book About OS Development](https://bit.ly/48JIdWp)** - Core OS concepts
+- **[The Little Book About OS Development](https://littleosbook.github.io/book.pdf)** - Core OS concepts
 - **[OSDev Wiki](https://wiki.osdev.org/)** - Comprehensive technical reference
 - **[Intel 64 and IA-32 Architectures Software Developer Manuals](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html)** - x86 architecture
 - **[GRUB Documentation](https://www.gnu.org/software/grub/manual/)** - Bootloader specification

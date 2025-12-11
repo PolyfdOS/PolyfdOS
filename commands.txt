@@ -1,0 +1,16 @@
+WSL2 (Windows Subsystem for Linux) - Recommended approach
+
+Install WSL2 with Ubuntu
+Run wsl --install in PowerShell (admin)
+
+
+Install required tools in WSL:
+
+bash
+sudo apt update
+sudo apt install build-essential nasm grub-pc-bin xorriso bochs bochs-sdl
+
+Cross-compiler for i386 (if needed):
+
+bash
+sudo apt install gcc-multilib
