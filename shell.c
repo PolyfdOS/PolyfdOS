@@ -272,7 +272,7 @@ void shell_ls_command(void)
         fb_puts("  [EXE]  cat         - Concatenate files\n");
         fb_puts("  [EXE]  ls          - List directory\n");
     } else if (strcmp(current_directory, "/home") == 0) {
-        fb_puts("  [DIR]  synthos/    - User directory\n");
+        fb_puts("  [DIR]  poyfdor/    - User directory\n");
         fb_puts("  [DIR]  guest/      - Guest directory\n");
     } else if (strcmp(current_directory, "/usr") == 0) {
         fb_puts("  [DIR]  local/      - Locally installed software\n");
@@ -365,7 +365,7 @@ void shell_sysinfo_command(void)
     fb_puts("  Kernel Size: 26 KB\n\n");
     
     fb_puts("System:\n");
-    fb_puts("  OS: polyfdOS v1.0\n");
+    fb_puts("  OS: polyfdOS v1.3\n");
     fb_puts("  Kernel: Monolithic\n");
     fb_puts("  Architecture: x86\n");
     fb_puts("  Boot Protocol: Multiboot\n");
@@ -495,7 +495,7 @@ void shell_echo_command(char *args)
  */
 void shell_about_command(void)
 {
-    fb_puts("polyfdOS v1.0 - Moroccan x86 Operating System\n");
+    fb_puts("polyfdOS v1.3 - Moroccan x86 Operating System\n");
     fb_puts("A minimal OS kernel built from scratch\n");
     fb_puts("Organization - Daftyon\n");
     fb_puts("Location - Morocco\n\n");
@@ -543,7 +543,7 @@ void shell_download_command(char *args)
  */
 void shell_sudo_command(char *args)
 {
-    fb_puts("[sudo] password for synthos:\n");
+    fb_puts("[sudo] password for poyfdor:\n");
     fb_puts("Authenticating...\n");
     fb_puts("Access granted!\n");
     fb_puts("Running: ");
@@ -669,8 +669,8 @@ void shell_init(void)
     fb_puts("              |___/                       \n");
     fb_puts("\n");
     fb_puts("===============================================\n");
-    fb_puts("   Moroccan x86 Operating System v1.0\n");
-    fb_puts("   Developer: Synthos | Organization: Daftyon\n");
+    fb_puts("   Moroccan x86 Operating System v1.3\n");
+    fb_puts("   Developer: poyfdor | Organization: Daftyon\n");
     fb_puts("===============================================\n\n");
     fb_puts("Type 'help' for available commands.\n");
     fb_puts("Try 'cd /home' to navigate directories!\n\n");

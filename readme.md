@@ -234,7 +234,7 @@ Use WASD to move, Q to quit
 
 ```bash
 > sudo install awesome-package
-[sudo] password for synthos:
+[sudo] password for poyfdor:
 Authenticating...
 Access granted! You are now root.
 
