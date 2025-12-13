@@ -5,6 +5,8 @@
 #include "keyboard.h"
 #include "shell.h"
 #include "filesystem.h"
+#include "bootsplash.h"
+#include "sysfiles.h"
 
 int kmain(void)
 {
@@ -41,11 +43,21 @@ int kmain(void)
     fs_mkdir("/dev");
     fs_mkdir("/tmp");
     fs_mkdir("/var");
+    fs_mkdir("/proc");
+    fs_mkdir("/sys");
     serial_write("Standard directories created\n", 29);
+    
+    /* Initialize system files */
+    sysfiles_init();
+    serial_write("System files populated\n", 23);
     
     /* Enable interrupts */
     __asm__ ("sti");
     serial_write("Interrupts enabled\n", 19);
+    
+    /* Show boot splash screen */
+    bootsplash_show();
+    serial_write("Boot splash displayed\n", 22);
     
     /* Initialize and run shell */
     shell_init();

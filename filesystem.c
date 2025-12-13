@@ -284,3 +284,5 @@ int fs_is_directory(const char *filepath)
     
     return 0;
 }
+
+/** fs_delete */

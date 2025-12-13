@@ -1,4 +1,4 @@
-OBJECTS = loader.o kmain.o io.o fb.o serial.o gdt.o gdt_s.o idt.o idt_s.o keyboard.o shell.o snake.o texteditor.o filesystem.o hardware.o
+OBJECTS = loader.o kmain.o io.o fb.o serial.o gdt.o gdt_s.o idt.o idt_s.o keyboard.o shell.o snake.o texteditor.o filesystem.o hardware.o bootsplash.o realistic.o realistic_asm_s.o realistic_demo.o sysfiles.o filemanager.o
 CC = gcc
 CFLAGS = -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
          -nostartfiles -nodefaultlibs -Wall -Wextra -Werror
@@ -73,6 +73,24 @@ filesystem.o: filesystem.c
 
 hardware.o: hardware.c
 	$(CC) $(CFLAGS) -c hardware.c -o hardware.o
+
+bootsplash.o: bootsplash.c
+	$(CC) $(CFLAGS) -c bootsplash.c -o bootsplash.o
+
+realistic.o: realistic.c
+	$(CC) $(CFLAGS) -c realistic.c -o realistic.o
+
+realistic_asm_s.o: realistic_asm.s
+	$(AS) $(ASFLAGS) realistic_asm.s -o realistic_asm_s.o
+
+realistic_demo.o: realistic_demo.c
+	$(CC) $(CFLAGS) -c realistic_demo.c -o realistic_demo.o
+
+sysfiles.o: sysfiles.c
+	$(CC) $(CFLAGS) -c sysfiles.c -o sysfiles.o
+
+filemanager.o: filemanager.c
+	$(CC) $(CFLAGS) -c filemanager.c -o filemanager.o
 
 clean:
 	rm -rf *.o kernel.elf polyfdos.iso

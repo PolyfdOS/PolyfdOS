@@ -80,4 +80,12 @@ int fs_mkdir(const char *dirpath);
  */
 int fs_is_directory(const char *filepath);
 
+/** fs_delete:
+ *  Delete a file or directory
+ *
+ *  @param filepath  Full path to delete
+ *  @return          0 on success, -1 on error
+ */
+int fs_delete(const char *filepath);
+
 #endif /* INCLUDE_FILESYSTEM_H */

@@ -7,6 +7,9 @@
 #include "texteditor.h"
 #include "filesystem.h"
 #include "hardware.h"
+#include "realistic_demo.h"
+#include "sysfiles.h"
+#include "filemanager.h"
 
 #define COMMAND_BUFFER_SIZE 256
 #define MAX_PATH_LENGTH 128
@@ -370,6 +373,77 @@ void shell_edit_command(char *args)
     fb_puts("Welcome back!\n\n");
 }
 
+/** shell_cat_command */
+void shell_cat_command(char *args)
+{
+    char file_content[2048];
+    char filepath[256];
+    int bytes_read;
+    int i;
+    
+    if (args[0] == '\0') {
+        fb_puts("Usage: cat <filename>\n");
+        fb_puts("Example: cat /etc/os-release\n");
+        return;
+    }
+    
+    /* Build full path */
+    if (args[0] == '/') {
+        /* Absolute path */
+        i = 0;
+        while (args[i] && i < 255) {
+            filepath[i] = args[i];
+            i++;
+        }
+        filepath[i] = '\0';
+    } else {
+        /* Relative path - prepend current directory */
+        i = 0;
+        const char *dir = current_directory;
+        while (*dir && i < 200) {
+            filepath[i++] = *dir++;
+        }
+        
+        /* Add slash if not root */
+        if (i > 0 && filepath[i-1] != '/') {
+            filepath[i++] = '/';
+        }
+        
+        /* Add filename */
+        int j = 0;
+        while (args[j] && i < 255) {
+            filepath[i++] = args[j++];
+        }
+        filepath[i] = '\0';
+    }
+    
+    /* Read file */
+    bytes_read = fs_read(filepath, file_content, sizeof(file_content) - 1);
+    
+    if (bytes_read < 0) {
+        fb_puts("cat: ");
+        fb_puts(filepath);
+        fb_puts(": No such file\n");
+        return;
+    }
+    
+    if (bytes_read == 0) {
+        /* Empty file */
+        return;
+    }
+    
+    /* Null-terminate */
+    file_content[bytes_read] = '\0';
+    
+    /* Display content */
+    fb_puts(file_content);
+    
+    /* Add newline if file doesn't end with one */
+    if (bytes_read > 0 && file_content[bytes_read - 1] != '\n') {
+        fb_puts("\n");
+    }
+}
+
 /** shell_clear_command */
 void shell_clear_command(void)
 {
@@ -386,8 +460,16 @@ void shell_help_command(void)
     fb_puts("  cpu      - CPU info (REAL!)\n");
     fb_puts("  mem      - Memory info (REAL!)\n");
     fb_puts("  cd/pwd/ls- Navigation\n");
+    fb_puts("  cat      - Display file contents\n");
+    fb_puts("  mkdir    - Create directory\n");
+    fb_puts("  rmdir    - Remove directory\n");
+    fb_puts("  rm       - Remove file\n");
+    fb_puts("  mv       - Move/rename file\n");
+    fb_puts("  cp       - Copy file\n");
+    fb_puts("  touch    - Create empty file\n");
     fb_puts("  edit     - Text editor\n");
     fb_puts("  play     - Snake game\n");
+    fb_puts("  realistic- 3-valued logic demo\n");
     fb_puts("  reboot/halt - Power\n");
 }
 
@@ -515,10 +597,27 @@ void shell_execute_command(void)
         shell_pwd_command();
     } else if (strcmp(cmd, "ls") == 0) {
         shell_ls_command();
+    } else if (strcmp(cmd, "cat") == 0) {
+        shell_cat_command(args);
+    } else if (strcmp(cmd, "mkdir") == 0) {
+        mkdir_command(args, current_directory);
+    } else if (strcmp(cmd, "rmdir") == 0) {
+        rmdir_command(args, current_directory);
+    } else if (strcmp(cmd, "rm") == 0) {
+        rm_command(args, current_directory);
+    } else if (strcmp(cmd, "mv") == 0) {
+        mv_command(args, current_directory);
+    } else if (strcmp(cmd, "cp") == 0) {
+        cp_command(args, current_directory);
+    } else if (strcmp(cmd, "touch") == 0) {
+        touch_command(args, current_directory);
     } else if (strcmp(cmd, "edit") == 0) {
         shell_edit_command(args);
     } else if (strcmp(cmd, "play") == 0) {
         shell_play_command();
+    } else if (strcmp(cmd, "realistic") == 0) {
+        realistic_demo();
+        fb_puts("\n");
     } else if (strcmp(cmd, "download") == 0) {
         shell_download_command(args);
     } else if (strcmp(cmd, "sudo") == 0) {
