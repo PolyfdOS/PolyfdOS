@@ -1,4 +1,3 @@
-WSL2 (Windows Subsystem for Linux) - Recommended approach
 
 Install WSL2 with Ubuntu
 Run wsl --install in PowerShell (admin)
